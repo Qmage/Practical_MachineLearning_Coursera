@@ -164,6 +164,7 @@ model&lt;- train(classe~., data=traind, trControl=train_cntrl, method=&quot;rf&q
 ## D    0    0    9 2886    0 0.0031088083
 ## E    0    1    0    3 3243 0.0012319064</code></pre>
 <p>The model is then used to predict on the test dataset. Based on the results, it has an accuracy of 0.9985, which is an error of 0.15%. With both the cross validation and testing results indicating an error rate of below 0.2%, there is no need to test other machine learning algorithm (e..g SVM, Logistic Regression) for this case.</p>
+<p>The result from predicting the classes of hold-out test dataset 0.15%, can be used to gauge the out of sample error.</p>
 <pre class="r"><code>ptest &lt;- predict(model, testd)
 print(confusionMatrix(ptest, testd$classe))</code></pre>
 <pre><code>## Confusion Matrix and Statistics

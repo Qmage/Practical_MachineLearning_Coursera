@@ -62,7 +62,7 @@ finaltest_data <- finaltest_data[,-colToRemove]
 
 ###Model creation and validation
 Train a randomForest model and apply a 10-fold cross validation.
-The final model has an estimated error rate of 0.16%, which is very promising.
+The final model has an estimated error rate of 0.15%, which is very promising.
 ```{r}
 train_cntrl <- trainControl(method="cv", number=10, savePredictions = TRUE)
 model<- train(classe~., data=traind, trControl=train_cntrl, method="rf")
@@ -71,6 +71,7 @@ model$finalModel
 ```
 
 The model is then used to predict on the test dataset. Based on the results, it has an accuracy of 0.9985, which is an error of 0.15%. With both the cross validation and testing results indicating an error rate of below 0.2%, there is no need to test other machine learning algorithm (e..g SVM, Logistic Regression) for this case.
+The result from predicting the classes of hold-out test dataset 0.15%, can be used to gauge the out of sample error.
 ```{r}
 ptest <- predict(model, testd)
 print(confusionMatrix(ptest, testd$classe))
