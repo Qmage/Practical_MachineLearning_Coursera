@@ -1,0 +1,96 @@
+---
+title: "Practical Machine Learning Coursera"
+author: "Clement Chin"
+date: "December 24, 2015"
+output: html_document
+---
+
+###Introduction
+This machine learning analysis is done as part of the project assignment of "Practical Machine Learning" course in Coursera.
+
+###Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. 
+
+In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, and to predict the manner in which they did the exercise. This is the "classe" variable in the training set. 
+
+###Data
+The training data for this project are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+###Data Preparation
+
+Loading the data from source
+```{r}
+library(caret)
+
+data <- read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv')
+finaltest_data <- read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv')
+```
+
+Hold out 10% of the data as test data (totally untouched)
+```{r}
+set.seed(1234)
+trainidx <- createDataPartition(data$classe,p=.9,list=FALSE)
+traind = data[trainidx,]
+testd = data[-trainidx,]
+```
+
+###Feature Selection
+Feature selection is done to all 3 datasets, which is training data, the testing data, the final20data.
+
+Remove columns with NA or empty string field
+```{r}
+retainedColumns <- !sapply(traind, function (x) any(is.na(x) | x == ""))
+traind <- traind[,retainedColumns]
+testd <- testd[,retainedColumns]
+finaltest_data <- finaltest_data[,retainedColumns]
+```
+Remove columns with near zero variance and unused columns, which is used to identity the rows but has no predictive power
+```{r}
+nzvColumns <- nearZeroVar(traind)
+unusedColumns <- which( colnames(traind)==c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", 
+                           "cvtd_timestamp", "num_window") )
+colToRemove <- c(nzvColumns,unusedColumns)
+
+traind <- traind[,-colToRemove]
+testd <- testd[,-colToRemove]
+finaltest_data <- finaltest_data[,-colToRemove]
+```
+
+###Model creation and validation
+Train a randomForest model and apply a 10-fold cross validation.
+The final model has an estimated error rate of 0.16%, which is very promising.
+```{r}
+train_cntrl <- trainControl(method="cv", number=10, savePredictions = TRUE)
+model<- train(classe~., data=traind, trControl=train_cntrl, method="rf")
+model
+model$finalModel
+```
+
+The model is then used to predict on the test dataset. Based on the results, it has an accuracy of 0.9985, which is an error of 0.15%. With both the cross validation and testing results indicating an error rate of below 0.2%, there is no need to test other machine learning algorithm (e..g SVM, Logistic Regression) for this case.
+```{r}
+ptest <- predict(model, testd)
+print(confusionMatrix(ptest, testd$classe))
+```
+
+###Final Prediction and generate submission files
+Predict the final 20 data using the model.
+```{r}
+finalpredict <- predict(model, finaltest_data)
+finalpredict
+```
+
+Generate the submission files based on the predicted results.
+```{r eval=FALSE}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(finalpredict)
+```
